@@ -366,6 +366,7 @@ window.vm = new Vue({
         $("#btn"+this.btnIndex).find("i").hide();
         $("#btn"+this.btnIndex).find("span").hide();
         $("#btn"+this.btnIndex).find("b").text("连接");
+        $("#send"+this.btnIndex).hide();
       }
       if (this.screenWebSocket) {
         this.screenWebSocket.close()
@@ -377,6 +378,7 @@ window.vm = new Vue({
       $("#btn"+i).find("i").show();
       $("#btn"+i).find("span").show();
       $("#btn"+i).find("b").text("断开");
+      $("#send"+i).show();
       this.btnIndex = i;
     },
     send: function (i){
@@ -386,6 +388,26 @@ window.vm = new Vue({
       this.codeInsert(code);
       this.runPythonWithConnect(code)
         .then(this.delayReload)
+      this.getCode(i)
+    },
+    getCode: function (i){
+      var _this = this;
+      var url = $("#url"+i).val();
+      $.ajax({
+        url: LOCAL_URL + "api/v1/getCode",
+        type: "GET",
+        data: {
+          url: url,
+        },
+      }).done((ret) => {
+          if(url.indexOf("34.96.235.216")!=-1){
+            var obj = eval("("+ret+")");
+            console.info(obj.message)
+            setTimeout(() => {
+              _this.getCode(i)
+            }, 2000);
+          }
+        })
     },
     slide: function(direction){
       var code = "";

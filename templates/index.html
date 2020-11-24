@@ -89,8 +89,7 @@
             </thead>
             <tbody>
             {% if len(devices) > 0 %}
-              {% set index=1 %}
-              {% for device in devices %}
+              {% for index in range(len(devices)) %}
             <tr>
               <td align="center" valign="middle">{{index}}</td>
               <!-- <td>
@@ -106,10 +105,11 @@
               </td> -->
               <td>
                 <!--v-model="serial" v-bind:placeholder="deviceUrl"-->
-              <input type="text"  id="device{{index}}" class="form-control" value="{{device}}">
+              <input type="text"  id="device{{index}}" class="form-control" value="{{devices[index]}}">
               </td>
               <td>
-            <input type="text" id="mobile{{index}}" class="form-control"> <button type="button" v-on:click="send({{index}})">发送</button>
+            <input type="text" id="mobile{{index}}" class="form-control" value="{{mobiles[index]}}"> <button class="btn btn-default" :disabled="connecting" id="send{{index}}" type="button" style="display: none;" v-on:click="send({{index}})">发送</button>
+                <input type="hidden" id="url{{index}}" value="{{urls[index]}}" />
             </td>
               <td>
             <template v-if="platform == 'Android'">
@@ -122,7 +122,6 @@
             </template>
             </td>
             </tr>
-            {% set index+=1 %}
             {% end %}
           {% else %}
               对不起，暂时没有发现手机。

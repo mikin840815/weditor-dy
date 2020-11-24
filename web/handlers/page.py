@@ -20,6 +20,8 @@ from tornado.escape import json_decode
 from ..device import connect_device, get_device
 from ..utils import tostr
 from ..version import __version__
+import requests
+import urllib.parse
 
 pathjoin = os.path.join
 
@@ -53,21 +55,32 @@ class VersionHandler(BaseHandler):
 
 class MainHandler(BaseHandler):
     def get(self):
+        f = open('account.txt', 'r')
+        list = f.readlines()
+        print(list)
         adb = 'adb devices'
         d = os.popen(adb)
         devices = []
+        mobiles = []
+        urls = []
         while True:
             str = d.readline()
             if str.find("List of devices attached") == -1:
                 s = str.replace("device", "").replace("\t", "").replace("\n", "")
                 if s != "":
                     devices.append(s)
+                    for sr in list:
+                        arr = sr.strip('\n').split("@")
+                        print(arr)
+                        if(s == arr[0]):
+                            mobiles.append(arr[1])
+                            urls.append(urllib.parse.quote(arr[2]))
                     print(str)
             # 读取完，循环结束
             if len(str) == 0:
                 break
         d.close()
-        self.render("index.html", devices=devices)
+        self.render("index.html", devices=devices, mobiles=mobiles, urls=urls)
 
 
 class DeviceConnectHandler(BaseHandler):
@@ -100,6 +113,22 @@ class DeviceConnectHandler(BaseHandler):
                 ret['screenWebSocketUrl'] = ws_addr + "/minicap"
             self.write(ret)
 
+class CodeHandler(BaseHandler):
+    def get(self):
+        url = urllib.parse.unquote(self.get_argument("url"))
+        try:
+            response = requests.get(url)
+            ret = response.text
+            print(ret)
+        except Exception as e:
+            logger.warning("device connect error: %s", e)
+            self.set_status(410)  # 410 Gone
+            self.write({
+                "success": False,
+                "description": traceback.format_exc(),
+            })
+        else:
+            self.write(ret)
 
 class DeviceHierarchyHandler(BaseHandler):
     def get(self, device_id):

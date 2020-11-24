@@ -88,6 +88,7 @@ def make_app(settings={}):
             (r"/", page.MainHandler),
             (r"/api/v1/version", page.VersionHandler),
             (r"/api/v1/connect", page.DeviceConnectHandler),
+            (r"/api/v1/getCode", page.CodeHandler),
             (r"/api/v1/crop", CropHandler),
             (r"/api/v1/devices/([^/]+)/screenshot", page.DeviceScreenshotHandler),
             (r"/api/v1/devices/([^/]+)/hierarchy", page.DeviceHierarchyHandler),
