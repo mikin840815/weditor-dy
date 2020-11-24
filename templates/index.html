@@ -58,11 +58,15 @@
       <div id="left">
         <div>
         </div>
-        <section id="screen">
+        <section id="screen" style="position:relative">
           <canvas id="fgCanvas" @dblclick="doTap(nodeSelected)" class="canvas-fg" v-bind:style="canvasStyle"></canvas>
           <canvas id="bgCanvas" class="canvas-bg" v-bind:style="canvasStyle"></canvas>
           <span class="finger finger-0" style="transform: translate3d(200px, 100px, 0px)"></span>
           <img style="z-index: 10" v-if="loading" src="/static/loading.svg">
+          <button style="position:absolute;top:-25px;" type="button" v-on:click="slide('T')">上</button>
+          <button style="position:absolute;bottom:-25px;" type="button" v-on:click="slide('B')">下</button>
+          <button style="position:absolute;left:0px;" type="button" v-on:click="slide('L')">左</button>
+          <button style="position:absolute;right:0px;" type="button" v-on:click="slide('R')">右</button>
         </section>
         <section id="footer">
           <button class="btn" @click="doKeyevent('power')">
@@ -81,45 +85,48 @@
         <form class="navbar-form navbar-left" onsubmit="return false">
           <table class="table table-bordered">
             <thead>
-            <tr><td>设备</td><td>设备号</td><td>账号</td><td>开关</td></tr>
+            <tr><td>编号</td><!-- <td>设备</td> --><td>设备号</td><td>账号</td><td>开关</td></tr>
             </thead>
             <tbody>
+            {% if len(devices) > 0 %}
+              {% set index=1 %}
+              {% for device in devices %}
             <tr>
-              <td>
+              <td align="center" valign="middle">{{index}}</td>
+              <!-- <td>
               <select v-model="platform" class="selectpicker" value="Android" title="Platform" data-width="fit">
                 <option data-icon="fa fa-android" value="Android">Android</option>
                 <option data-icon="fa fa-apple" value="iOS">iOS</option>
-                <!-- <option data-icon="glyphicon-apple" value="Neco">Neco(beta)</option> -->
               </select>
-              <!-- <el-select v-model="serial" allow-create filterable placeholder="选择或输入">
+              <el-select v-model="serial" allow-create filterable placeholder="选择或输入">
                 <el-option
                   v-for="item in deviceList" :key="item.value" :label="item.label + ':' + item.value" :value="item.value">
                 </el-option>
-              </el-select> -->
+              </el-select>
+              </td> -->
+              <td>
+                <!--v-model="serial" v-bind:placeholder="deviceUrl"-->
+              <input type="text"  id="device{{index}}" class="form-control" value="{{device}}">
               </td>
               <td>
-              <input type="text" v-model="serial" class="form-control" v-bind:placeholder="deviceUrl">
-              </td>
-            <!--
-            <button type="submit" class="btn btn-default" v-on:click="doConnect" :disabled="connecting">
-              Connect
-              <i v-if="connecting" class="fa fa-spinner fa-spin"></i>
-              <span v-if="deviceId" class="glyphicon glyphicon-grain color-green"></span>
-            </button>
-
-            <button :disabled="loading || connecting" class="btn btn-default" v-on:click="dumpHierarchyWithScreen()">
-              <i class="fa fa-refresh" :class='{"fa-spin": dumping}'></i> Dump Hierarchy
-            </button>-->
-              <td>
-            <input type="text" v-model="user" class="form-control" v-bind:placeholder="user">
+            <input type="text" id="mobile{{index}}" class="form-control"> <button type="button" v-on:click="send({{index}})">发送</button>
             </td>
               <td>
             <template v-if="platform == 'Android'">
-              <el-switch v-model="liveScreen" active-text="" inactive-text="">
-              </el-switch>
+              <input type="checkbox" id="data{{index}}" value="1"> 清数据
+              <button id="btn{{index}}" type="submit" class="btn btn-default" v-on:click="con({{index}})" :disabled="connecting">
+                <b>连接</b>
+                <i v-if="connecting" style="display: none" class="fa fa-spinner fa-spin"></i>
+                <span style="display: none;" class="glyphicon glyphicon-grain color-green"></span>
+              </button>
             </template>
             </td>
             </tr>
+            {% set index+=1 %}
+            {% end %}
+          {% else %}
+              对不起，暂时没有发现手机。
+          {% end %}
             </tbody>
           </table>
         </form>
@@ -219,7 +226,7 @@
         </div>
       </div>
       <div class="vertical-gap"></div>
-      <div id="right" style="display: none">
+      <div id="right">
         <div class="panel panel-default" style="margin-bottom: 0px; border-bottom: 0px">
           <div class="panel-heading">
             <span class="glyphicon glyphicon-music"></span> Coding

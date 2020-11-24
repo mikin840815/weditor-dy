@@ -60,7 +60,8 @@ window.vm = new Vue({
         offset: 0,
         current: -1,
       }
-    }
+    },
+    btnIndex:null,
   },
   watch: {
     platform: function (newval) {
@@ -225,7 +226,6 @@ window.vm = new Vue({
     this.checkVersion()
 
     this.initPythonWebSocket()
-
     // this.screenRefresh()
     // this.loadLiveScreen();
   },
@@ -361,6 +361,54 @@ window.vm = new Vue({
       let count = this.mapAttrCount[collectionKey][key] || 0;
       this.mapAttrCount[collectionKey][key] = count + 1;
     },
+    con: function (i) {
+      if(this.btnIndex != null){
+        $("#btn"+this.btnIndex).find("i").hide();
+        $("#btn"+this.btnIndex).find("span").hide();
+        $("#btn"+this.btnIndex).find("b").text("连接");
+      }
+      if (this.screenWebSocket) {
+        this.screenWebSocket.close()
+        this.screenWebSocket = null;
+      }
+      var device = $("#device"+i).val();
+      this.serial = device;
+      this.doConnect().then(this.loadLiveScreen)
+      $("#btn"+i).find("i").show();
+      $("#btn"+i).find("span").show();
+      $("#btn"+i).find("b").text("断开");
+      this.btnIndex = i;
+    },
+    send: function (i){
+      var mobile = $("#mobile"+i).val();
+      const code = `d.send_keys("${mobile}", clear=True)`
+      this.loading = true;
+      this.codeInsert(code);
+      this.runPythonWithConnect(code)
+        .then(this.delayReload)
+    },
+    slide: function(direction){
+      var code = "";
+      switch (direction){
+        case "T":
+          code = 'd(scrollable=True).scroll(steps=10)';
+          break;
+        case "B":
+          code = 'd(scrollable=True).scroll.vert.backward(steps=10)';
+          break;
+        case "L":
+          code = 'd(scrollable=True).scroll.horiz.backward(steps=50)';
+          break;
+        case "R":
+          code = 'd(scrollable=True).scroll.horiz.forward(steps=50)';
+          break;
+      }
+      return this.runPythonWithConnect(code)
+        .then(function () {
+          return this.codeInsert(code);
+        }.bind(this))
+        .then(this.delayReload)
+    },
     doConnect: function () {
       this.connecting = true
       var lastDeviceId = this.deviceId;
@@ -370,7 +418,7 @@ window.vm = new Vue({
         method: 'POST',
         data: {
           platform: this.platform,
-          deviceUrl: this.deviceUrl,
+          deviceUrl: this.serial,
         },
       })
         .then((ret) => {
@@ -975,21 +1023,16 @@ window.vm = new Vue({
         codeLines = [
           "print('Set environment and prepare d = u2.connect()')",
           "import os",
+          "from time import sleep",
           "import uiautomator2 as u2",
           `os.environ['ANDROID_DEVICE_IP'] = "${deviceUrl}"`,
           `d = u2.connect()`,
-          `d.app_start("com.ss.android.ugc.aweme", stop=True)`,
-          `sleep(1)`,
-          `d(resourceId="com.ss.android.ugc.aweme:id/gyg", text=u"我").click()`,
-          `while True:`,
-          `  if d.xpath("//android.widget.TextView[@text='我']").exists:`,
-          `    d(resourceId="com.ss.android.ugc.aweme:id/gyg", text=u"我").click()`,
-          `    break`,
-          `  else:`,
-          `    sleep(0.1)`,
-          `    continue`,
-          `sleep(1)`,
         ]
+        if(this.btnIndex != null){
+          if($("#data"+this.btnIndex).prop("checked")){
+            codeLines.push(`d.app_clear("com.ss.android.ugc.aweme")`);
+          }
+        }
       } else {
         console.error("Unsupported deviceId", this.deviceId)
         codeLines = [

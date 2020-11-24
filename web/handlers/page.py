@@ -21,7 +21,6 @@ from ..device import connect_device, get_device
 from ..utils import tostr
 from ..version import __version__
 
-
 pathjoin = os.path.join
 
 
@@ -54,7 +53,21 @@ class VersionHandler(BaseHandler):
 
 class MainHandler(BaseHandler):
     def get(self):
-        self.render("index.html")
+        adb = 'adb devices'
+        d = os.popen(adb)
+        devices = []
+        while True:
+            str = d.readline()
+            if str.find("List of devices attached") == -1:
+                s = str.replace("device", "").replace("\t", "").replace("\n", "")
+                if s != "":
+                    devices.append(s)
+                    print(str)
+            # 读取完，循环结束
+            if len(str) == 0:
+                break
+        d.close()
+        self.render("index.html", devices=devices)
 
 
 class DeviceConnectHandler(BaseHandler):
@@ -83,7 +96,7 @@ class DeviceConnectHandler(BaseHandler):
                 'success': True,
             }
             if platform == "android":
-                ws_addr = get_device(id).device.address.replace("http://", "ws://") # yapf: disable
+                ws_addr = get_device(id).device.address.replace("http://", "ws://")  # yapf: disable
                 ret['screenWebSocketUrl'] = ws_addr + "/minicap"
             self.write(ret)
 
@@ -175,7 +188,7 @@ class DeviceWidgetListHandler(BaseHandler):
             "package": data["package"],
             "activity": data["activity"],
             "class_name": data['className'],
-            "rect": dict(x=lx, y=ly, width=rx-lx, height=ry-ly),
+            "rect": dict(x=lx, y=ly, width=rx - lx, height=ry - ly),
             "window_size": data['windowSize'],
             "xpath": data['xpath'],
             "target_image": {
@@ -187,7 +200,7 @@ class DeviceWidgetListHandler(BaseHandler):
                 "url": f"http://localhost:17310/widgets/{widget_id}/screenshot.jpg",
             },
             # "hierarchy": data['hierarchy'],
-        } # yapf: disable
+        }  # yapf: disable
 
         with open(pathjoin(target_dir, "meta.json"), "w",
                   encoding="utf-8") as f:
@@ -226,4 +239,3 @@ class DeviceScreenshotHandler(BaseHandler):
         except RuntimeError as e:
             self.set_status(410)  # Gone
             self.write({"description": traceback.print_exc()})
-
